@@ -119,8 +119,16 @@ inline bool operator!=(const iterator& rhs) const {
   return current != rhs.current;
 }
 
+inline bool hasNext() const {
+	return current->next != nullptr;
+}
+
+inline bool hasPrev() const {
+	return current->prev != nullptr;
+}
+
 T& operator++() {
-  if (current->next) {
+  if (current) {
     current = current->next;
   }
 
@@ -128,14 +136,14 @@ T& operator++() {
 }
 
 T& operator--() {
-  if (current->prev) {
+  if (current) {
     current = current->prev;
   }
 
   return current->data;
 }
 
-T& operator()() {
+T& operator*() {
   return current->data;
 }
 };
@@ -145,7 +153,14 @@ iterator begin() {
 }
 
 iterator end() {
+  return iterator(nullptr);
+}
+
+iterator rbegin() {
   return iterator(tail);
 }
 
+iterator rend() {
+  return iterator(nullptr);
+}
 };
