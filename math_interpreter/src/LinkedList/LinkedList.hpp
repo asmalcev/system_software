@@ -108,6 +108,7 @@ private:
   Node * current;
 public:
 iterator(Node * init) : current(init) {}
+iterator(const iterator& rhs) : current(rhs.current) {}
 
 ~iterator() {}
 
@@ -145,6 +146,15 @@ T& operator--() {
 
 T& operator*() {
   return current->data;
+}
+
+T * operator->() {
+  return &current->data;
+}
+
+
+void remove() {
+
 }
 };
 
