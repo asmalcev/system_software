@@ -2,7 +2,6 @@
 
 #include <iostream>
 #include <string>
-#include <sstream>
 #include <list>
 
 #include "../Stack/PriorityStack.cpp"
@@ -18,7 +17,8 @@ enum token_type {
   action_multiply,
   action_divide,
   bracket_open,
-  bracket_close
+  bracket_close,
+  float_point
 };
 
 struct math_token {

@@ -1,10 +1,16 @@
 #include "MathInterpreter.hpp"
 
+#include <iomanip>
+#include <sstream>
+
 static void print_list(std::list<math_token> * plist, std::string spliter = "");
 
 static token_type char_type(char c) {
   if (isdigit(c)) {
     return token_type::number;
+  }
+  if (c == '.') {
+    return token_type::float_point;
   }
   if (c == '+') {
     return token_type::action_plus;
@@ -27,7 +33,7 @@ static token_type char_type(char c) {
   return token_type::none;
 }
 
-static bool isActionType(token_type tt) {
+static bool is_action_type(token_type tt) {
   return tt == token_type::action_plus ||
          tt == token_type::action_minus ||
          tt == token_type::action_multiply ||
@@ -58,13 +64,37 @@ static std::list<math_token> * split_into_tokens(std::string str) {
     if (tt == token_type::none) {
       tt = token_tmp;
     } else {
-      if (tt != token_type::number || tt != token_tmp) {
-        plist->push_back({
-          value: str.substr(bindex, i - bindex),
-          type : tt
-        });
-        tt = token_tmp;
-        bindex = i;
+      if (
+        tt != token_type::number ||
+        (tt != token_tmp && tt != token_type::float_number)
+      ) {
+        // if prev is float and current is number -> continue
+        if (!(tt == token_type::float_number && token_tmp == token_type::number)) {
+          if (token_tmp == token_type::float_point) {
+            if (tt == token_type::float_number) {
+              // if number is already float - new float point = error
+              throw std::logic_error("Recurring float point in string");
+            } else {
+              if (tt == token_type::number) {
+                tt = token_type::float_number;
+              } else {
+                plist->push_back({
+                  value: str.substr(bindex, i - bindex),
+                  type : tt
+                });
+                tt = float_number;
+                bindex = i;
+              }
+            }
+          } else {
+            plist->push_back({
+              value: str.substr(bindex, i - bindex),
+              type : tt
+            });
+            tt = token_tmp;
+            bindex = i;
+          }
+        }
       }
     }
 
@@ -83,6 +113,35 @@ static bool check_brackets(std::list<math_token>::iterator it) {
          (++(++it))->type == token_type::bracket_close;
 }
 
+static char unary_surroundings_check(std::list<math_token>::iterator it) {
+  if (it->type == token_type::number) {
+    return 'n';
+  } else if (it->type == token_type::float_number) {
+    return 'f';
+  } else {
+    // another type
+    return 'a';
+  }
+}
+
+static char binary_surroundings_check(std::list<math_token>::iterator it) {
+  char tmp = unary_surroundings_check(it);
+  if ((--it)->type == token_type::number) {
+    return tmp == 'f' ? 'f' : 'n';
+  } else if (it->type == token_type::float_number) {
+    return 'f';
+  } else {
+    // another type
+    return 'a';
+  }
+}
+
+static std::string to_precision_string(Float n, size_t precision = 10) {
+  std::stringstream ss;
+  ss << std::setprecision(precision) << n;
+  return ss.str();
+}
+
 std::string execute_expression(std::string input) {
   std::list<math_token> * plist = split_into_tokens(clear_spaces(input));
 
@@ -95,7 +154,7 @@ std::string execute_expression(std::string input) {
     } else if (it->type == token_type::bracket_close) {
       bracket_depth--;
     } else if (it->type == token_type::action_plus) {
-      if (it == plist->begin() || isActionType((--it)->type)) {
+      if (it == plist->begin() || is_action_type((--it)->type)) {
         // if unary plus
         if (it != plist->begin()) {
           // if prev token exists need to iterate back to plus
@@ -114,7 +173,7 @@ std::string execute_expression(std::string input) {
         });
       }
     } else if (it->type == token_type::action_minus) {
-      if (it == plist->begin() || isActionType((--it)->type)) {
+      if (it == plist->begin() || is_action_type((--it)->type)) {
         // if unary minus
         if (it != plist->begin()) {
           // if prev token exists need to iterate back to minus
@@ -145,89 +204,141 @@ std::string execute_expression(std::string input) {
 
   priority_token tmp;
   std::list<math_token>::iterator it;
+  char surroundings;
   while (!action_stack.isEmpty()) {
     tmp = action_stack.pull();
 
-    // print_list(plist, " ");
-    // std::cout << "OPERATOR: " << tmp.priority << " " << tmp.it->value << std::endl;
+    print_list(plist, " ");
 
     token_type action = tmp.it->type;
     it = plist->erase(tmp.it);
-    
+
     // ACTION PLUS
     if (action == token_type::action_plus) {
-      if (it->type == token_type::number &&
-          (--it)->type == token_type::number) {
-        Number n1 = atoi(it->value.c_str());
+      surroundings = binary_surroundings_check(it);
+      --it;
+      if (surroundings == 'n') {
+        Number n1 = std::stoll(it->value);
         it = plist->erase(it);
-        Number n2 = atoi(it->value.c_str());
+        Number n2 = std::stoll(it->value);
         it->value = std::to_string(n1 + n2);
-        if (tmp.priority > 2 && check_brackets(it)) {
-          it = plist->erase(--it);
-          it = plist->erase(++it);
-        }
+      } else if (surroundings == 'f') {
+        Float n1 = std::stold(it->value);
+        it = plist->erase(it);
+        Float n2 = std::stold(it->value);
+        it->value = to_precision_string(n1 + n2);
+      } else {
+        throw std::logic_error("Operands of + must be numbers or floats");
+      }
+
+      // if high priority then it can be inro brackets
+      if (tmp.priority > 2 && check_brackets(it)) {
+        it = plist->erase(--it);
+        it = plist->erase(++it);
       }
     
     // ACTION UNARY PLUS
     } else if (action == token_type::action_unary_plus) {
-      if (it->type == token_type::number) {
-        if (tmp.priority > 2 && check_brackets(it)) {
-          it = plist->erase(--it);
-          it = plist->erase(++it);
-        }
+      surroundings = unary_surroundings_check(it);
+      if (surroundings == 'a') {
+        throw std::logic_error("Operand of + must be number or float");
+      }
+
+      // if high priority then it can be inro brackets
+      if (tmp.priority > 2 && check_brackets(it)) {
+        it = plist->erase(--it);
+        it = plist->erase(++it);
       }
 
     // ACTION MINUS
     } else if (action == token_type::action_minus) {
-      if (it->type == token_type::number &&
-          (--it)->type == token_type::number) {
-        Number n1 = atoi(it->value.c_str());
+      surroundings = binary_surroundings_check(it);
+      --it;
+      if (surroundings == 'n') {
+        Number n1 = std::stoll(it->value);
         it = plist->erase(it);
-        Number n2 = atoi(it->value.c_str());
+        Number n2 = std::stoll(it->value);
         it->value = std::to_string(n1 - n2);
-        if (tmp.priority > 2 && check_brackets(it)) {
-          it = plist->erase(--it);
-          it = plist->erase(++it);
-        }
+      } else if (surroundings == 'f') {
+        Float n1 = std::stold(it->value);
+        it = plist->erase(it);
+        Float n2 = std::stold(it->value);
+        it->value = to_precision_string(n1 - n2);
+      } else {
+        throw std::logic_error("Operands of - must be numbers or floats");
+      }
+
+      // if high priority then it can be inro brackets
+      if (tmp.priority > 2 && check_brackets(it)) {
+        it = plist->erase(--it);
+        it = plist->erase(++it);
       }
 
     // ACTION UNARY MINUS
     } else if (action == token_type::action_unary_minus) {
-      if (it->type == token_type::number) {
-        Number n1 = atoi(it->value.c_str());
+      surroundings = unary_surroundings_check(it);
+      if (surroundings == 'n') {
+        Number n1 = std::stoll(it->value);
         it->value = std::to_string(-n1);
-        if (tmp.priority > 2 && check_brackets(it)) {
-          it = plist->erase(--it);
-          it = plist->erase(++it);
-        }
+      } else if (surroundings == 'f') {
+        Float n1 = std::stold(it->value);
+        it->value = to_precision_string(-n1);
+      } else {
+        throw std::logic_error("Operand of - must be number or float");
+      }
+
+      // if high priority then it can be inro brackets
+      if (tmp.priority > 2 && check_brackets(it)) {
+        it = plist->erase(--it);
+        it = plist->erase(++it);
       }
 
     // ACTION MULTIPLY
     } else if (action == token_type::action_multiply) {
-      if (it->type == token_type::number &&
-          (--it)->type == token_type::number) {
-        Number n1 = atoi(it->value.c_str());
+      surroundings = binary_surroundings_check(it);
+      --it;
+      if (surroundings == 'n') {
+        Number n1 = std::stoll(it->value);
         it = plist->erase(it);
-        Number n2 = atoi(it->value.c_str());
+        Number n2 = std::stoll(it->value);
         it->value = std::to_string(n1 * n2);
-        if (tmp.priority > 2 && check_brackets(it)) {
-          it = plist->erase(--it);
-          it = plist->erase(++it);
-        }
+      } else if (surroundings == 'f') {
+        Float n1 = std::stold(it->value);
+        it = plist->erase(it);
+        Float n2 = std::stold(it->value);
+        it->value = to_precision_string(n1 * n2);
+      } else {
+        throw std::logic_error("Operands of * must be numbers or floats");
+      }
+
+      // if high priority then it can be inro brackets
+      if (tmp.priority > 2 && check_brackets(it)) {
+        it = plist->erase(--it);
+        it = plist->erase(++it);
       }
 
     // ACTION DIVIDE
     } else if (action == token_type::action_divide) {
-      if (it->type == token_type::number &&
-          (--it)->type == token_type::number) {
-        Number n1 = atoi(it->value.c_str());
+      surroundings = binary_surroundings_check(it);
+      --it;
+      if (surroundings == 'n') {
+        Number n1 = std::stoll(it->value);
         it = plist->erase(it);
-        Number n2 = atoi(it->value.c_str());
+        Number n2 = std::stoll(it->value);
         it->value = std::to_string(n1 / n2);
-        if (tmp.priority > 2 && check_brackets(it)) {
-          it = plist->erase(--it);
-          it = plist->erase(++it);
-        }
+      } else if (surroundings == 'f') {
+        Float n1 = std::stold(it->value);
+        it = plist->erase(it);
+        Float n2 = std::stold(it->value);
+        it->value = to_precision_string(n1 / n2);
+      } else {
+        throw std::logic_error("Operands of / must be numbers or floats");
+      }
+
+      // if high priority then it can be inro brackets
+      if (tmp.priority > 2 && check_brackets(it)) {
+        it = plist->erase(--it);
+        it = plist->erase(++it);
       }
     }
   }
