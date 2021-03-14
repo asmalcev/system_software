@@ -42,7 +42,7 @@ void push(T data) {
       Node * current = top,
            * prev    = top;
 
-      while (current->below && data < current->data) {
+      while (current->below && data <= current->data) {
         prev    = current;
         current = current->below;
       }
@@ -56,8 +56,8 @@ void push(T data) {
           top        = tmp;
         }
       } else if (current->below == nullptr) {
-        current->below = tmp;
-        tmp->below     = nullptr;
+        prev->below = tmp;
+        tmp->below  = current;
       } else {
         prev->below = tmp;
         tmp->below  = current;

@@ -4,7 +4,7 @@
 #include <string>
 #include <list>
 
-#include "../Stack/PriorityStack.cpp"
+#include "../Stack/PriorityStack.hpp"
 
 enum token_type {
   none,
@@ -33,9 +33,14 @@ struct priority_token {
   inline bool operator<(const priority_token& rhs) const {
     return priority < rhs.priority;
   }
+
+  inline bool operator<=(const priority_token& rhs) const {
+    return priority <= rhs.priority;
+  }
 };
 
 typedef long long Number;
 typedef long double Float;
 
 std::string execute_expression(std::string input);
+std::ostream& operator<<(std::ostream& os, const priority_token& pt);

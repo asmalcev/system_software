@@ -24,7 +24,7 @@ $(BUILD_DIR)/interpreter.o: $(INTERPRETER_DIR)/*.cpp
 	g++ $(BUILD_FLAGS) -c $< -o $@
 
 run: $(BUILD_DIR)/$(BINNAME)
-	$(BUILD_DIR)/$(BINNAME)
+	$(BUILD_DIR)/$(BINNAME) $(ARGS)
 
 run_test: $(BUILD_DIR)/test_$(BINNAME)
 	$(BUILD_DIR)/test_$(BINNAME)

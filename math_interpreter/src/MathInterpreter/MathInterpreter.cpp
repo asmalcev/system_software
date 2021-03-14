@@ -376,3 +376,7 @@ static void print_list(std::list<math_token> * plist, std::string spliter) {
   }
   std::cout << std::endl;
 }
+
+std::ostream& operator<<(std::ostream& os, const priority_token& pt) {
+  return (os << pt.priority << " " << pt.it->value);
+}
