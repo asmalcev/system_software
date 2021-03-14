@@ -73,7 +73,7 @@ static std::list<math_token> * split_into_tokens(std::string str) {
           if (token_tmp == token_type::float_point) {
             if (tt == token_type::float_number) {
               // if number is already float - new float point = error
-              throw std::logic_error("Recurring float point in string");
+              throw std::logic_error("Recurring float point in number");
             } else {
               if (tt == token_type::number) {
                 tt = token_type::float_number;
@@ -87,10 +87,17 @@ static std::list<math_token> * split_into_tokens(std::string str) {
               }
             }
           } else {
-            plist->push_back({
-              value: str.substr(bindex, i - bindex),
-              type : tt
-            });
+            if (tt == token_type::float_number && i - bindex == 1) {
+              plist->push_back({
+                value: "0",
+                type : tt
+              });
+            } else {
+              plist->push_back({
+                value: str.substr(bindex, i - bindex),
+                type : tt
+              });
+            }
             tt = token_tmp;
             bindex = i;
           }
@@ -100,10 +107,17 @@ static std::list<math_token> * split_into_tokens(std::string str) {
 
     i++;
   }
-  plist->push_back({
-    value: str.substr(bindex),
-    type : tt
-  });
+  if (tt == token_type::float_number && i - bindex == 1) {
+    plist->push_back({
+      value: "0",
+      type : tt
+    });
+  } else {
+    plist->push_back({
+      value: str.substr(bindex, i - bindex),
+      type : tt
+    });
+  }
 
   return plist;
 }
@@ -134,12 +148,6 @@ static char binary_surroundings_check(std::list<math_token>::iterator it) {
     // another type
     return 'a';
   }
-}
-
-static std::string to_precision_string(Float n, size_t precision = 10) {
-  std::stringstream ss;
-  ss << std::setprecision(precision) << n;
-  return ss.str();
 }
 
 std::string execute_expression(std::string input) {
@@ -208,7 +216,7 @@ std::string execute_expression(std::string input) {
   while (!action_stack.isEmpty()) {
     tmp = action_stack.pull();
 
-    print_list(plist, " ");
+    // print_list(plist, " ");
 
     token_type action = tmp.it->type;
     it = plist->erase(tmp.it);
@@ -226,7 +234,7 @@ std::string execute_expression(std::string input) {
         Float n1 = std::stold(it->value);
         it = plist->erase(it);
         Float n2 = std::stold(it->value);
-        it->value = to_precision_string(n1 + n2);
+        it->value = std::to_string(n1 + n2);
       } else {
         throw std::logic_error("Operands of + must be numbers or floats");
       }
@@ -263,7 +271,7 @@ std::string execute_expression(std::string input) {
         Float n1 = std::stold(it->value);
         it = plist->erase(it);
         Float n2 = std::stold(it->value);
-        it->value = to_precision_string(n1 - n2);
+        it->value = std::to_string(n1 - n2);
       } else {
         throw std::logic_error("Operands of - must be numbers or floats");
       }
@@ -282,7 +290,7 @@ std::string execute_expression(std::string input) {
         it->value = std::to_string(-n1);
       } else if (surroundings == 'f') {
         Float n1 = std::stold(it->value);
-        it->value = to_precision_string(-n1);
+        it->value = std::to_string(-n1);
       } else {
         throw std::logic_error("Operand of - must be number or float");
       }
@@ -306,7 +314,7 @@ std::string execute_expression(std::string input) {
         Float n1 = std::stold(it->value);
         it = plist->erase(it);
         Float n2 = std::stold(it->value);
-        it->value = to_precision_string(n1 * n2);
+        it->value = std::to_string(n1 * n2);
       } else {
         throw std::logic_error("Operands of * must be numbers or floats");
       }
@@ -325,12 +333,18 @@ std::string execute_expression(std::string input) {
         Number n1 = std::stoll(it->value);
         it = plist->erase(it);
         Number n2 = std::stoll(it->value);
+        if (n2 == 0) {
+          throw std::logic_error("Can't divide by 0");
+        }
         it->value = std::to_string(n1 / n2);
       } else if (surroundings == 'f') {
         Float n1 = std::stold(it->value);
         it = plist->erase(it);
         Float n2 = std::stold(it->value);
-        it->value = to_precision_string(n1 / n2);
+        if (n2 < __DBL_EPSILON__) {
+          throw std::logic_error("Can't divide by 0");
+        }
+        it->value = std::to_string(n1 / n2);
       } else {
         throw std::logic_error("Operands of / must be numbers or floats");
       }
@@ -342,7 +356,7 @@ std::string execute_expression(std::string input) {
       }
     }
   }
-  
+
   std::string result = plist->begin()->value;
   delete plist;
 
