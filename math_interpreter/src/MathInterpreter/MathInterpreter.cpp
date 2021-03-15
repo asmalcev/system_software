@@ -160,6 +160,9 @@ std::string execute_expression(std::string input) {
     if (it->type == token_type::bracket_open) {
       bracket_depth++;
     } else if (it->type == token_type::bracket_close) {
+      if ((long long) (bracket_depth - 1) < 0) {
+        throw std::logic_error("Superfluous brackets");
+      }
       bracket_depth--;
     } else if (it->type == token_type::action_plus) {
       if (it == plist->begin() || is_action_type((--it)->type)) {
@@ -208,6 +211,15 @@ std::string execute_expression(std::string input) {
       });
     }
   }
+
+  for (auto it = plist->begin(); it != plist->end();) {
+    if (it->type == token_type::bracket_open ||
+        it->type == token_type::bracket_close) {
+      it = plist->erase(it);
+    } else {
+      ++it;
+    }
+  }
   // print_list(plist, "\n");
 
   priority_token tmp;
@@ -240,23 +252,11 @@ std::string execute_expression(std::string input) {
         throw std::logic_error("Operands of + must be numbers or floats");
       }
 
-      // if high priority then it can be inro brackets
-      if (tmp.priority > 2 && check_brackets(it)) {
-        it = plist->erase(--it);
-        it = plist->erase(++it);
-      }
-    
     // ACTION UNARY PLUS
     } else if (action == token_type::action_unary_plus) {
       surroundings = unary_surroundings_check(it);
       if (surroundings == 'a') {
         throw std::logic_error("Operand of + must be number or float");
-      }
-
-      // if high priority then it can be inro brackets
-      if (tmp.priority > 2 && check_brackets(it)) {
-        it = plist->erase(--it);
-        it = plist->erase(++it);
       }
 
     // ACTION MINUS
@@ -277,12 +277,6 @@ std::string execute_expression(std::string input) {
         throw std::logic_error("Operands of - must be numbers or floats");
       }
 
-      // if high priority then it can be inro brackets
-      if (tmp.priority > 2 && check_brackets(it)) {
-        it = plist->erase(--it);
-        it = plist->erase(++it);
-      }
-
     // ACTION UNARY MINUS
     } else if (action == token_type::action_unary_minus) {
       surroundings = unary_surroundings_check(it);
@@ -294,12 +288,6 @@ std::string execute_expression(std::string input) {
         it->value = std::to_string(-n1);
       } else {
         throw std::logic_error("Operand of - must be number or float");
-      }
-
-      // if high priority then it can be inro brackets
-      if (tmp.priority > 2 && check_brackets(it)) {
-        it = plist->erase(--it);
-        it = plist->erase(++it);
       }
 
     // ACTION MULTIPLY
@@ -318,12 +306,6 @@ std::string execute_expression(std::string input) {
         it->value = std::to_string(n1 * n2);
       } else {
         throw std::logic_error("Operands of * must be numbers or floats");
-      }
-
-      // if high priority then it can be inro brackets
-      if (tmp.priority > 2 && check_brackets(it)) {
-        it = plist->erase(--it);
-        it = plist->erase(++it);
       }
 
     // ACTION DIVIDE
@@ -348,12 +330,6 @@ std::string execute_expression(std::string input) {
         it->value = std::to_string(n1 / n2);
       } else {
         throw std::logic_error("Operands of / must be numbers or floats");
-      }
-
-      // if high priority then it can be inro brackets
-      if (tmp.priority > 2 && check_brackets(it)) {
-        it = plist->erase(--it);
-        it = plist->erase(++it);
       }
     }
   }

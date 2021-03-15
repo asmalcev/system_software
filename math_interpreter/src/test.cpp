@@ -9,7 +9,7 @@ struct test {
 };
 
 constexpr size_t TEST_START_INDEX = 0;
-constexpr size_t TESTS_COUNT = 16;
+constexpr size_t TESTS_COUNT = 19;
 
 int main() {
   const test tests[] = {
@@ -77,6 +77,18 @@ int main() {
       "12.8 - (5 / 5.5 * (20 + 4))",
       "-9.018184"
     },
+    {
+      "4 + (10)",
+      "14"
+    },
+    {
+      "(((((((((412)))))))))",
+      "412"
+    },
+    {
+      "))))) 3 * 0  (((( + 2",
+      "Superfluous brackets"
+    }
   };
 
   bool isOk;
