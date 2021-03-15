@@ -217,6 +217,7 @@ std::string execute_expression(std::string input) {
     tmp = action_stack.pull();
 
     // print_list(plist, " ");
+    // std::cout << tmp << std::endl;
 
     token_type action = tmp.it->type;
     it = plist->erase(tmp.it);

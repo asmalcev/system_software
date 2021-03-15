@@ -56,8 +56,13 @@ void push(T data) {
           top        = tmp;
         }
       } else if (current->below == nullptr) {
-        prev->below = tmp;
-        tmp->below  = current;
+        if (data <= current->data) {
+          current->below = tmp;
+          tmp->below     = nullptr;
+        } else {
+          prev->below = tmp;
+          tmp->below  = current;
+        }
       } else {
         prev->below = tmp;
         tmp->below  = current;

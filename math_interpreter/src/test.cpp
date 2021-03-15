@@ -9,7 +9,7 @@ struct test {
 };
 
 constexpr size_t TEST_START_INDEX = 0;
-constexpr size_t TESTS_COUNT = 15;
+constexpr size_t TESTS_COUNT = 16;
 
 int main() {
   const test tests[] = {
@@ -72,6 +72,10 @@ int main() {
     {
       "2 - 4..",
       "Recurring float point in number"
+    },
+    {
+      "12.8 - (5 / 5.5 * (20 + 4))",
+      "-9.018184"
     },
   };
 
