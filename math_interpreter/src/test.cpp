@@ -87,7 +87,7 @@ int main() {
     },
     {
       "))))) 3 * 0  (((( + 2",
-      "Superfluous brackets"
+      "Superfluous brackets ')'"
     }
   };
 

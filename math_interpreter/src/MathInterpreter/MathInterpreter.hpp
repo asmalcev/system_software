@@ -5,6 +5,7 @@
 #include <list>
 
 #include "../Stack/PriorityStack.hpp"
+#include "../FunctionInterpreter/FunctionInterpreter.hpp"
 
 enum token_type {
   none,
@@ -18,7 +19,8 @@ enum token_type {
   action_divide,
   bracket_open,
   bracket_close,
-  float_point
+  float_point,
+  symbol
 };
 
 struct math_token {
@@ -42,5 +44,6 @@ struct priority_token {
 typedef long long Number;
 typedef long double Float;
 
+token_type char_type(char c);
 std::string execute_expression(std::string input);
 std::ostream& operator<<(std::ostream& os, const priority_token& pt);

@@ -5,7 +5,7 @@
 
 static void print_list(std::list<math_token> * plist, std::string spliter = "");
 
-static token_type char_type(char c) {
+token_type char_type(char c) {
   if (isdigit(c)) {
     return token_type::number;
   }
@@ -29,6 +29,9 @@ static token_type char_type(char c) {
   }
   if (c == ')') {
     return token_type::bracket_close;
+  }
+  if (isalpha(c)) {
+    return token_type::symbol;
   }
   return token_type::none;
 }
@@ -55,13 +58,38 @@ static std::list<math_token> * split_into_tokens(std::string str) {
 
   size_t bindex = 0,
          i      = 0;
+  char c        = 0;
+  bool should_push = true;
   token_type tt = token_type::none,
              token_tmp;
 
-  for (auto c : str) {
+  for (; i < str.size(); ++i) {
+    c = str[i];
     token_tmp = char_type(c);
+    if (token_tmp == token_type::none) {
+      throw std::invalid_argument("Unidentified symbol");
+    }
 
-    if (tt == token_type::none) {
+    if (token_tmp == token_type::symbol) {
+      if (i != 0) {
+        if (should_push) {
+          plist->push_back({
+            value: str.substr(bindex, i - bindex),
+            type : tt
+          });
+        }
+
+        tt = token_type::symbol;
+        bindex = i;
+      }
+
+      size_t functionLength;
+      plist->push_back(execute_function(str.substr(bindex), functionLength));
+      i += functionLength - 2;
+
+      should_push = false;
+
+    } else if (tt == token_type::none) {
       tt = token_tmp;
     } else {
       if (
@@ -78,42 +106,43 @@ static std::list<math_token> * split_into_tokens(std::string str) {
               if (tt == token_type::number) {
                 tt = token_type::float_number;
               } else {
-                plist->push_back({
+                if (should_push) plist->push_back({
                   value: str.substr(bindex, i - bindex),
                   type : tt
                 });
-                tt = float_number;
-                bindex = i;
+
+                tt          = token_type::float_number;
+                bindex      = i;
+                should_push = true;
               }
             }
           } else {
             if (tt == token_type::float_number && i - bindex == 1) {
-              plist->push_back({
+              if (should_push) plist->push_back({
                 value: "0",
                 type : tt
               });
             } else {
-              plist->push_back({
+              if (should_push) plist->push_back({
                 value: str.substr(bindex, i - bindex),
                 type : tt
               });
             }
-            tt = token_tmp;
-            bindex = i;
+            tt          = token_tmp;
+            bindex      = i;
+            should_push = true;
           }
         }
       }
     }
-
-    i++;
   }
   if (tt == token_type::float_number && i - bindex == 1) {
-    plist->push_back({
+    if (should_push) plist->push_back({
       value: "0",
       type : tt
     });
   } else {
-    plist->push_back({
+    if (should_push) plist->push_back({
       value: str.substr(bindex, i - bindex),
       type : tt
     });
@@ -161,7 +190,7 @@ std::string execute_expression(std::string input) {
       bracket_depth++;
     } else if (it->type == token_type::bracket_close) {
       if ((long long) (bracket_depth - 1) < 0) {
-        throw std::logic_error("Superfluous brackets");
+        throw std::logic_error("Superfluous brackets ')'");
       }
       bracket_depth--;
     } else if (it->type == token_type::action_plus) {
@@ -212,6 +241,10 @@ std::string execute_expression(std::string input) {
     }
   }
 
+  if (bracket_depth > 0) {
+    throw std::logic_error("Superfluous brackets '('");
+  }
+
   for (auto it = plist->begin(); it != plist->end();) {
     if (it->type == token_type::bracket_open ||
         it->type == token_type::bracket_close) {
@@ -220,7 +253,7 @@ std::string execute_expression(std::string input) {
       ++it;
     }
   }
-  // print_list(plist, "\n");
+  print_list(plist, "\n");
 
   priority_token tmp;
   std::list<math_token>::iterator it;
