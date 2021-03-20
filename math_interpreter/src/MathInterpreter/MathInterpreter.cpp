@@ -1,11 +1,10 @@
 #include "MathInterpreter.hpp"
 
-#include <iomanip>
 #include <sstream>
 
 static void print_list(std::list<math_token> * plist, std::string spliter = "");
 
-token_type char_type(char c) {
+static token_type char_type(char c) {
   if (isdigit(c)) {
     return token_type::number;
   }
@@ -83,9 +82,9 @@ static std::list<math_token> * split_into_tokens(std::string str) {
         bindex = i;
       }
 
-      size_t functionLength;
-      plist->push_back(execute_function(str.substr(bindex), functionLength));
-      i += functionLength - 2;
+      size_t functionLength = 0;
+      plist->push_back(_execute_function(str.substr(bindex), functionLength));
+      i += functionLength - (i == 0 ? 2 : 1);
 
       should_push = false;
 
@@ -179,18 +178,20 @@ static char binary_surroundings_check(std::list<math_token>::iterator it) {
   }
 }
 
-std::string execute_expression(std::string input) {
+math_token _execute_expression(std::string input) {
   std::list<math_token> * plist = split_into_tokens(clear_spaces(input));
 
   PriorityStack<priority_token> action_stack;
   size_t bracket_depth = 0;
 
+  // print_list(plist, "\n");
+
   for (auto it = plist->begin(); it != plist->end(); ++it) {
     if (it->type == token_type::bracket_open) {
       bracket_depth++;
     } else if (it->type == token_type::bracket_close) {
-      if ((long long) (bracket_depth - 1) < 0) {
-        throw std::logic_error("Superfluous brackets ')'");
+      if (bracket_depth == 0) {
+        throw std::logic_error("Superfluous brackets ')' in math expression");
       }
       bracket_depth--;
     } else if (it->type == token_type::action_plus) {
@@ -253,7 +254,6 @@ std::string execute_expression(std::string input) {
       ++it;
     }
   }
-  print_list(plist, "\n");
 
   priority_token tmp;
   std::list<math_token>::iterator it;
@@ -367,11 +367,16 @@ std::string execute_expression(std::string input) {
     }
   }
 
-  std::string result = plist->begin()->value;
+  math_token result = *plist->begin();
   delete plist;
 
   return result;
 }
+
+std::string execute_expression(std::string input) {
+  return _execute_expression(input).value;
+}
+
 
 
 

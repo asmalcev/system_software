@@ -9,7 +9,7 @@ struct test {
 };
 
 constexpr size_t TEST_START_INDEX = 0;
-constexpr size_t TESTS_COUNT = 19;
+constexpr size_t TESTS_COUNT = 26;
 
 int main() {
   const test tests[] = {
@@ -87,8 +87,36 @@ int main() {
     },
     {
       "))))) 3 * 0  (((( + 2",
-      "Superfluous brackets ')'"
-    }
+      "Superfluous brackets ')' in math expression"
+    },
+    {
+      "sin(30 + 4) + 2",
+      "2.529083"
+    },
+    {
+      "5 * sin(30 + 4) + 2",
+      "4.645415"
+    },
+    {
+      "sin(1) + cos(1) + tan(1) + asin(1) + acos(1) + atan(1)",
+      "5.295375"
+    },
+    {
+      "sin 4 + 2",
+      "The function was not called"
+    },
+    {
+      "sin(3 * sin(4))",
+      "-0.765094"
+    },
+    {
+      "tan(4, 6)",
+      "Invalid number of arguments for tan function"
+    },
+    {
+      "create_array(1, 2, 3,4)",
+      "Unindefined function name"
+    },
   };
 
   bool isOk;

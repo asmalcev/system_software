@@ -11,7 +11,13 @@ Supported operations and their priority:
 2. \* \/
 3. unary \+, unary \-
 
-Unfixed bugs:
-+ Program can't cope with useless brackets nesting like these (note: plan to fix it with string analyse which will delete superfluous):
-  * ((20))
-  * 4 + ((10) + 5) 
+## function_interpreter
+This utility can call functions contained in the string
+
+Supported functions:
++ sin
++ cos
++ tan
++ asin
++ acos
++ atan

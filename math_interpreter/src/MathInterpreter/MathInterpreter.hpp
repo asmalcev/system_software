@@ -20,7 +20,8 @@ enum token_type {
   bracket_open,
   bracket_close,
   float_point,
-  symbol
+  symbol,
+  comma
 };
 
 struct math_token {
@@ -44,6 +45,6 @@ struct priority_token {
 typedef long long Number;
 typedef long double Float;
 
-token_type char_type(char c);
+math_token _execute_expression(std::string input);
 std::string execute_expression(std::string input);
 std::ostream& operator<<(std::ostream& os, const priority_token& pt);

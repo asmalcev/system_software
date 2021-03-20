@@ -12,7 +12,7 @@ FUNCTION_IN_DIR 	= ./src/FunctionInterpreter
 build: $(BUILD_DIR)/main.o $(BUILD_DIR)/interpreter.o $(BUILD_DIR)/func_interpreter.o
 	g++ $^ $(BUILD_FLAGS) -o $(BUILD_DIR)/$(BINNAME)
 
-build_test: $(BUILD_DIR)/test.o $(BUILD_DIR)/interpreter.o
+build_test: $(BUILD_DIR)/test.o $(BUILD_DIR)/interpreter.o $(BUILD_DIR)/func_interpreter.o
 	g++ $^ $(BUILD_FLAGS) -o $(BUILD_DIR)/test_$(BINNAME)
 
 $(BUILD_DIR)/main.o: $(MAIN_PATH)
