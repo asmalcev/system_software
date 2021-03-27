@@ -314,7 +314,7 @@ math_token _execute_expression(std::string input) {
   while (!action_stack.isEmpty()) {
     tmp = action_stack.pull();
 
-    print_list(plist, " ");
+    // print_list(plist, " ");
     // std::cout << tmp << std::endl;
 
     token_type action = tmp.it->type;

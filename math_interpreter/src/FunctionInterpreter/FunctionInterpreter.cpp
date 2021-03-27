@@ -35,6 +35,9 @@ supported_functions detect_function(std::string func_name) {
   if (func_name == "atan") {
     return supported_functions::f_atan;
   }
+  if (func_name == "println") {
+    return supported_functions::f_println;
+  }
   return supported_functions::unindefined;
 }
 
@@ -148,6 +151,13 @@ struct math_token _execute_function(std::string str, size_t & p_length) {
       result = std::to_string(atan(std::stold(it->value)));
     }
     tt = token_type::float_number;
+  } else if (sf == supported_functions::f_println) {
+    if (args.size() != 1) {
+      throw std::invalid_argument("Invalid number of arguments for println function");
+    }
+    std::cout << it->value << std::endl;
+    result = "";
+    tt     = token_type::none;
   }
 
   return {

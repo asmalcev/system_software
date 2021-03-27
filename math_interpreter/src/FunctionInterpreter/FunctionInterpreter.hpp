@@ -13,6 +13,7 @@ enum supported_functions {
   f_asin,
   f_acos,
   f_atan,
+  f_println,
   unindefined
 };
 
