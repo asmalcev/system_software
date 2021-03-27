@@ -21,8 +21,16 @@ enum token_type {
   bracket_close,
   float_point,
   symbol,
-  comma
+  comma,
+  logic_action_less,
+  logic_action_more,
+  logic_action_and,
+  logic_action_or,
+  logic_action_not,
+  logic_action_equals,
 };
+
+constexpr size_t PRIORITY_NOTATION = 8;
 
 struct math_token {
   std::string value;

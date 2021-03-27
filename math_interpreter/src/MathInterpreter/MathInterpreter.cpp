@@ -29,6 +29,24 @@ static token_type char_type(char c) {
   if (c == ')') {
     return token_type::bracket_close;
   }
+  if (c == '<') {
+    return token_type::logic_action_less;
+  }
+  if (c == '>') {
+    return token_type::logic_action_more;
+  }
+  if (c == '&') {
+    return token_type::logic_action_and;
+  }
+  if (c == '|') {
+    return token_type::logic_action_or;
+  }
+  if (c == '!') {
+    return token_type::logic_action_not;
+  }
+  if (c == '=') {
+    return token_type::logic_action_equals;
+  }
   if (isalpha(c)) {
     return token_type::symbol;
   }
@@ -36,10 +54,16 @@ static token_type char_type(char c) {
 }
 
 static bool is_action_type(token_type tt) {
-  return tt == token_type::action_plus ||
-         tt == token_type::action_minus ||
-         tt == token_type::action_multiply ||
-         tt == token_type::action_divide;
+  return tt == token_type::action_plus         ||
+         tt == token_type::action_minus        ||
+         tt == token_type::action_multiply     ||
+         tt == token_type::action_divide       ||
+         tt == token_type::logic_action_less   ||
+         tt == token_type::logic_action_more   ||
+         tt == token_type::logic_action_and    ||
+         tt == token_type::logic_action_or     ||
+         tt == token_type::logic_action_equals ||
+         tt == token_type::logic_action_not;
 }
 
 static std::string clear_spaces(std::string str) {
@@ -91,6 +115,9 @@ static std::list<math_token> * split_into_tokens(std::string str) {
     } else if (tt == token_type::none) {
       tt = token_tmp;
     } else {
+      // if (tt == token_type::logic) {
+
+      // }
       if (
         tt != token_type::number ||
         (tt != token_tmp && tt != token_type::float_number)
@@ -203,13 +230,13 @@ math_token _execute_expression(std::string input) {
         }
         it->type = token_type::action_unary_plus;
         action_stack.push({
-          priority: 3 * bracket_depth + 2,
+          priority: PRIORITY_NOTATION * bracket_depth + 6,
           it: it
         });
       } else {
         // if binary plus
         action_stack.push({
-          priority: 3 * bracket_depth,
+          priority: PRIORITY_NOTATION * bracket_depth + 4,
           it: (++it) // iterate to next token, because iterated to prev to check type
         });
       }
@@ -222,13 +249,13 @@ math_token _execute_expression(std::string input) {
         }
         it->type = token_type::action_unary_minus;
         action_stack.push({
-          priority: 3 * bracket_depth + 2,
+          priority: PRIORITY_NOTATION * bracket_depth + 6,
           it: it
         });
       } else {
         // if binary minus
         action_stack.push({
-          priority: 3 * bracket_depth,
+          priority: PRIORITY_NOTATION * bracket_depth + 4,
           it: (++it) // iterate to next token, because iterated to prev to check type
         });
       }
@@ -236,7 +263,33 @@ math_token _execute_expression(std::string input) {
                it->type == token_type::action_divide) {
       // if binary multiply or divide
       action_stack.push({
-        priority: 3 * bracket_depth + 1,
+        priority: PRIORITY_NOTATION * bracket_depth + 5,
+        it: it
+      });
+    } else if (it->type == token_type::logic_action_or) {
+      action_stack.push({
+        priority: PRIORITY_NOTATION * bracket_depth,
+        it: it
+      });
+    } else if (it->type == token_type::logic_action_and) {
+      action_stack.push({
+        priority: PRIORITY_NOTATION * bracket_depth + 1,
+        it: it
+      });
+    } else if (it->type == token_type::logic_action_equals) {
+      action_stack.push({
+        priority: PRIORITY_NOTATION * bracket_depth + 2,
+        it: it
+      });
+    } else if (it->type == token_type::logic_action_not) {
+      action_stack.push({
+        priority: PRIORITY_NOTATION * bracket_depth + 7,
+        it: it
+      });
+    } else if (it->type == token_type::logic_action_less ||
+               it->type == token_type::logic_action_more) {
+      action_stack.push({
+        priority: PRIORITY_NOTATION * bracket_depth + 3,
         it: it
       });
     }
@@ -261,7 +314,7 @@ math_token _execute_expression(std::string input) {
   while (!action_stack.isEmpty()) {
     tmp = action_stack.pull();
 
-    // print_list(plist, " ");
+    print_list(plist, " ");
     // std::cout << tmp << std::endl;
 
     token_type action = tmp.it->type;
@@ -363,6 +416,64 @@ math_token _execute_expression(std::string input) {
         it->value = std::to_string(n1 / n2);
       } else {
         throw std::logic_error("Operands of / must be numbers or floats");
+      }
+
+    // LOGIC >
+    } else if (action == token_type::logic_action_more) {
+      surroundings = binary_surroundings_check(it);
+      --it;
+      if (surroundings == 'n') {
+        Number n1 = std::stoll(it->value);
+        it = plist->erase(it);
+        Number n2 = std::stoll(it->value);
+        if (n2 == 0) {
+          throw std::logic_error("Can't divide by 0");
+        }
+        it->value = std::to_string(n1 > n2);
+      } else if (surroundings == 'f') {
+        Float n1 = std::stold(it->value);
+        it = plist->erase(it);
+        Float n2 = std::stold(it->value);
+        if (n2 < __DBL_EPSILON__) {
+          throw std::logic_error("Can't divide by 0");
+        }
+        it->value = std::to_string(n1 > n2);
+      } else {
+        throw std::logic_error("Operands of > must be numbers or floats");
+      }
+
+    // LOGIC <
+    } else if (action == token_type::logic_action_less) {
+      surroundings = binary_surroundings_check(it);
+      --it;
+      if (surroundings == 'n') {
+        Number n1 = std::stoll(it->value);
+        it = plist->erase(it);
+        Number n2 = std::stoll(it->value);
+        if (n2 == 0) {
+          throw std::logic_error("Can't divide by 0");
+        }
+        it->value = std::to_string(n1 < n2);
+      } else if (surroundings == 'f') {
+        Float n1 = std::stold(it->value);
+        it = plist->erase(it);
+        Float n2 = std::stold(it->value);
+        if (n2 < __DBL_EPSILON__) {
+          throw std::logic_error("Can't divide by 0");
+        }
+        it->value = std::to_string(n1 < n2);
+      } else {
+        throw std::logic_error("Operands of < must be numbers or floats");
+      }
+
+    // LOGIC !
+    } else if (action == token_type::logic_action_not) {
+      surroundings = unary_surroundings_check(it);
+      if (surroundings == 'n') {
+        Number n1 = std::stoll(it->value);
+        it->value = std::to_string(!n1);
+      } else {
+        throw std::logic_error("Operand of ! must be number");
       }
     }
   }
