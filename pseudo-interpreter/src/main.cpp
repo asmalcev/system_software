@@ -1,16 +1,18 @@
 #include <iostream>
 #include <regex>
 #include <sstream>
-#include <stack>
+#include <deque>
+#include <fstream>
 
 #include "../../math_interpreter/src/MathInterpreter/MathInterpreter.hpp"
-#include "../../math_interpreter/src/FunctionInterpreter/FunctionInterpreter.hpp"
 
-std::string clear_input(std::string input) {
+void interpreter_code(std::string input);
+
+std::string clear_input(std::ifstream& input) {
   std::stringstream ss;
-  for (auto c : input) {
-    if (c != '\n' &&
-        c != ' ') {
+  char c;
+  while (input.get(c)) {
+    if (!std::isspace(c)) {
       ss << c;
     }
   }
@@ -28,83 +30,122 @@ bool check_logic_expression(std::string str) {
   return false;
 }
 
-enum operator_token {
-  t_if,
-  t_else
-};
+size_t if_proccessing(std::string input) {
+  size_t bracket_depth    = 0,
+         condition_block_length = 0;
+  token_type tt;
 
-struct condition_state {
-  operator_token op_t;
-  size_t depth;
-  bool state;
-};
-
-void execute_fragment(std::string str) {
-  std::regex re(";");
-  size_t bindex  = 0,
-         cur_pos = 0;
-  for (
-    std::sregex_iterator it = std::sregex_iterator(str.begin(), str.end(), re);
-    it != std::sregex_iterator();
-    it++
-  ) {
-    cur_pos = (*it).position();
-    execute_expression(str.substr(bindex, cur_pos - bindex));
-    bindex = cur_pos + 1;
+  if (input[condition_block_length++] != '(') {
+    throw std::logic_error("Operator-if condition must be into rounded brackets and follow behind it");
+  } else {
+    bracket_depth++;
   }
-  if (cur_pos + 1 != str.size()) {
-    throw std::logic_error("Missed ; symbol");
-  }
-}
-
-int main() {
-  std::string input = clear_input("if (4 > 5) {\nprintln(4 + 4);\n} else {\nprintln(-4 * 6);\n}");
-
-  std::regex re("if|else|[\\{\\}]");
-  std::string buffer;
-  size_t bindex        = 0,
-         cur_pos       = 0,
-         bracket_depth = 0;
-
-  std::stack<condition_state> history;
-
-  for (
-    std::sregex_iterator it = std::sregex_iterator(input.begin(), input.end(), re);
-    it != std::sregex_iterator();
-    it++
-  ) {
-    buffer  = (*it).str(0);
-    cur_pos = (*it).position();
-
-    if (buffer == "if") {
-      bindex = cur_pos + 2;
-      history.push({operator_token::t_if, bracket_depth});
-
-    } else if (buffer == "{") {
-      if (history.top().op_t == operator_token::t_if) {
-        history.top().state = check_logic_expression(input.substr(bindex, cur_pos - bindex));
-      }
-
-      bindex = cur_pos + 1;
+  while (bracket_depth != 0 && condition_block_length < input.size()) {
+    tt = char_type_func(input[condition_block_length++]);
+    if (tt == token_type::bracket_open) {
       bracket_depth++;
-
-    } else if (buffer == "}") {
-      if (bracket_depth == 0) {
-        throw std::logic_error("Superfluous brackets }");
-      }
+    } else if (tt == token_type::bracket_close) {
       bracket_depth--;
-      if (history.top().state) {
-        execute_fragment(input.substr(bindex, cur_pos - bindex));
-      }
+    }
+  }
+  if (condition_block_length >= input.size()) {
+    throw std::logic_error("Operator-if condition must be into rounded brackets and follow behind it");
+  }
 
-      bindex = cur_pos + 1;
+  bool condition_state = check_logic_expression(input.substr(0, condition_block_length));
 
-    } else if (buffer == "else") {
-      bindex = cur_pos + 4;
-      history.push({operator_token::t_else, bracket_depth, !history.top().state});
+  if (input[condition_block_length++] != '{') {
+    throw std::logic_error("Operator-if statement must be into figured brackets and follow behind condition");
+  } else {
+    bracket_depth++;
+  }
+  size_t statement_bindex = condition_block_length;
+  while (bracket_depth != 0 && condition_block_length < input.size()) {
+    tt = char_type_func(input[condition_block_length++]);
+    if (tt == token_type::figured_bracket_open) {
+      bracket_depth++;
+    } else if (tt == token_type::figured_bracket_close) {
+      bracket_depth--;
     }
   }
   if (bracket_depth != 0) {
-    throw std::logic_error("Superfluous brackets {");
+    throw std::logic_error("Operator-if statement must be into figured brackets and follow behind condition");
   }
+  size_t statement_eindex = condition_block_length - 1;
+
+  std::regex re("[a-zA-Z]\\w*");
+  if (std::sregex_iterator(
+        input.begin() + condition_block_length, input.end(), re
+      )->str() == "else") {
+
+    condition_block_length += 4;
+    if (input[condition_block_length++] != '{') {
+      throw std::logic_error("Operator-if statement must be into figured brackets and follow behind condition");
+    } else {
+      bracket_depth++;
+    }
+
+    if (!condition_state) statement_bindex = condition_block_length;
+
+    while (bracket_depth != 0 && condition_block_length < input.size()) {
+      tt = char_type_func(input[condition_block_length++]);
+      if (tt == token_type::figured_bracket_open) {
+        bracket_depth++;
+      } else if (tt == token_type::figured_bracket_close) {
+        bracket_depth--;
+      }
+    }
+    if (char_type_func(input[condition_block_length - 1]) != token_type::figured_bracket_close) {
+      throw std::logic_error("Operator-if statement must be into figured brackets and follow behind condition");
+    }
+
+    if (!condition_state) statement_eindex = condition_block_length;
+  }
+
+  interpreter_code(input.substr(statement_bindex, statement_eindex - statement_bindex));
+  return condition_block_length - 1;
+}
+
+void interpreter_code(std::string input) {
+  // regex for word starting with letter
+  std::regex re("[a-zA-Z]\\w*");
+  std::sregex_iterator it;
+  std::string buffer;
+  size_t length_buffer = 0;
+
+  for (size_t i = 0; i < input.size(); ++i) {
+    if (char_type_math(input[i]) == token_type::symbol) {
+      it = std::sregex_iterator(input.begin() + i, input.end(), re);
+      buffer = it->str();
+
+      if (buffer == "if") {
+        i += buffer.size() + if_proccessing(input.substr(i + 2));
+      } else {
+        _execute_function(input.substr(i), length_buffer);
+        i += length_buffer;
+        length_buffer = 0;
+
+        if (input[i] != ';') {
+          throw std::logic_error("Missed ; symbol");
+        }
+      }
+    }
+  }
+}
+
+int main(int argc, char ** argv) {
+  if (argc < 2) {
+    std::cout << "Not enough arguments" << std::endl;
+    return 0;
+  }
+
+  std::ifstream input(argv[1]);
+  std::string line;
+
+  if (!input.is_open()) {
+    std::cout << "Can't open " << argv[1] << " or it doesn't exist" << std::endl;
+    return 0;
+  }
+
+  interpreter_code(clear_input(input));
 }

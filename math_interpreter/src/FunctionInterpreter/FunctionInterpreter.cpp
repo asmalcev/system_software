@@ -3,7 +3,7 @@
 #include <sstream>
 #include <cmath>
 
-static token_type char_type(char c) {
+token_type char_type_func(char c) {
   if (c == ',') {
     return token_type::comma;
   }
@@ -12,6 +12,12 @@ static token_type char_type(char c) {
   }
   if (c == ')') {
     return token_type::bracket_close;
+  }
+  if (c == '{') {
+    return token_type::figured_bracket_open;
+  }
+  if (c == '}') {
+    return token_type::figured_bracket_close;
   }
   return token_type::none;
 }
@@ -54,20 +60,17 @@ struct math_token _execute_function(std::string str, size_t & p_length) {
   }
   supported_functions sf = detect_function(str.substr(0, p_length - 1));
   if (sf == supported_functions::unindefined) {
-    throw std::invalid_argument("Unindefined function name");
+    throw std::invalid_argument("Unindefined function name - " + str.substr(0, p_length - 1));
   }
 
   bindex = p_length;
   do {
     c  = str[p_length++];
-    tt = char_type(c);
-    
+    tt = char_type_func(c);
+
     if (tt == token_type::bracket_open) {
       bracket_depth++;
     } else if (tt == token_type::bracket_close) {
-      if (bracket_depth == 0) {
-        throw std::logic_error("Superfluous brackets ')' in function call");
-      } 
       if (bracket_depth == 1) {
         args.push_back(
           _execute_expression(

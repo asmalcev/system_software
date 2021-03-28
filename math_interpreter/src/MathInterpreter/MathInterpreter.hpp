@@ -4,9 +4,6 @@
 #include <string>
 #include <list>
 
-#include "../Stack/PriorityStack.hpp"
-#include "../FunctionInterpreter/FunctionInterpreter.hpp"
-
 enum token_type {
   none,
   number,
@@ -28,14 +25,19 @@ enum token_type {
   logic_action_or, // not supported
   logic_action_not,
   logic_action_equals, // not supported
+  figured_bracket_open,
+  figured_bracket_close
 };
-
-constexpr size_t PRIORITY_NOTATION = 8;
 
 struct math_token {
   std::string value;
   token_type  type;
 };
+
+#include "../Stack/PriorityStack.hpp"
+#include "../FunctionInterpreter/FunctionInterpreter.hpp"
+
+constexpr size_t PRIORITY_NOTATION = 8;
 
 struct priority_token {
   size_t priority;
@@ -55,4 +57,6 @@ typedef long double Float;
 
 math_token _execute_expression(std::string input);
 std::string execute_expression(std::string input);
+
 std::ostream& operator<<(std::ostream& os, const priority_token& pt);
+token_type char_type_math(char c);

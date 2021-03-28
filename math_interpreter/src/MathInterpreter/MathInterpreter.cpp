@@ -4,7 +4,7 @@
 
 static void print_list(std::list<math_token> * plist, std::string spliter = "");
 
-static token_type char_type(char c) {
+token_type char_type_math(char c) {
   if (isdigit(c)) {
     return token_type::number;
   }
@@ -53,17 +53,9 @@ static token_type char_type(char c) {
   return token_type::none;
 }
 
-static bool is_action_type(token_type tt) {
-  return tt == token_type::action_plus         ||
-         tt == token_type::action_minus        ||
-         tt == token_type::action_multiply     ||
-         tt == token_type::action_divide       ||
-         tt == token_type::logic_action_less   ||
-         tt == token_type::logic_action_more   ||
-         tt == token_type::logic_action_and    ||
-         tt == token_type::logic_action_or     ||
-         tt == token_type::logic_action_equals ||
-         tt == token_type::logic_action_not;
+static bool is_not_number_type(token_type tt) {
+  return tt != token_type::number &&
+         tt != token_type::float_number;
 }
 
 static std::string clear_spaces(std::string str) {
@@ -88,7 +80,7 @@ static std::list<math_token> * split_into_tokens(std::string str) {
 
   for (; i < str.size(); ++i) {
     c = str[i];
-    token_tmp = char_type(c);
+    token_tmp = char_type_math(c);
     if (token_tmp == token_type::none) {
       throw std::invalid_argument("Unidentified symbol");
     }
@@ -222,7 +214,7 @@ math_token _execute_expression(std::string input) {
       }
       bracket_depth--;
     } else if (it->type == token_type::action_plus) {
-      if (it == plist->begin() || is_action_type((--it)->type)) {
+      if (it == plist->begin() || is_not_number_type((--it)->type)) {
         // if unary plus
         if (it != plist->begin()) {
           // if prev token exists need to iterate back to plus
@@ -241,7 +233,7 @@ math_token _execute_expression(std::string input) {
         });
       }
     } else if (it->type == token_type::action_minus) {
-      if (it == plist->begin() || is_action_type((--it)->type)) {
+      if (it == plist->begin() || is_not_number_type((--it)->type)) {
         // if unary minus
         if (it != plist->begin()) {
           // if prev token exists need to iterate back to minus
@@ -426,17 +418,11 @@ math_token _execute_expression(std::string input) {
         Number n1 = std::stoll(it->value);
         it = plist->erase(it);
         Number n2 = std::stoll(it->value);
-        if (n2 == 0) {
-          throw std::logic_error("Can't divide by 0");
-        }
         it->value = std::to_string(n1 > n2);
       } else if (surroundings == 'f') {
         Float n1 = std::stold(it->value);
         it = plist->erase(it);
         Float n2 = std::stold(it->value);
-        if (n2 < __DBL_EPSILON__) {
-          throw std::logic_error("Can't divide by 0");
-        }
         it->value = std::to_string(n1 > n2);
       } else {
         throw std::logic_error("Operands of > must be numbers or floats");
@@ -450,17 +436,11 @@ math_token _execute_expression(std::string input) {
         Number n1 = std::stoll(it->value);
         it = plist->erase(it);
         Number n2 = std::stoll(it->value);
-        if (n2 == 0) {
-          throw std::logic_error("Can't divide by 0");
-        }
         it->value = std::to_string(n1 < n2);
       } else if (surroundings == 'f') {
         Float n1 = std::stold(it->value);
         it = plist->erase(it);
         Float n2 = std::stold(it->value);
-        if (n2 < __DBL_EPSILON__) {
-          throw std::logic_error("Can't divide by 0");
-        }
         it->value = std::to_string(n1 < n2);
       } else {
         throw std::logic_error("Operands of < must be numbers or floats");

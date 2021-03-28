@@ -1,0 +1,10 @@
+println(12 * 2);
+
+if (50 * 2 > 99) {
+  println(1);
+  if (30 < !15) {
+    println(50 / (4 - 2 * 2));
+  } else {
+    println(10 + 99);
+  }
+}

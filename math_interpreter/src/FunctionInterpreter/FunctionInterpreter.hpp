@@ -18,4 +18,7 @@ enum supported_functions {
 };
 
 std::string execute_function(std::string str);
-struct math_token _execute_function(std::string str, size_t & p_length);
+supported_functions detect_function(std::string func_name);
+
+math_token _execute_function(std::string str, size_t & p_length);
+token_type char_type_func(char c);
