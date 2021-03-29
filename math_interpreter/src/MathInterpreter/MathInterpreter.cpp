@@ -53,9 +53,18 @@ token_type char_type_math(char c) {
   return token_type::none;
 }
 
-static bool is_not_number_type(token_type tt) {
-  return tt != token_type::number &&
-         tt != token_type::float_number;
+static bool can_be_unary_neighbor(token_type tt) {
+  return tt == token_type::action_divide       ||
+         tt == token_type::action_minus        ||
+         tt == token_type::action_plus         ||
+         tt == token_type::action_multiply     ||
+         tt == token_type::logic_action_and    ||
+         tt == token_type::logic_action_equals ||
+         tt == token_type::logic_action_less   ||
+         tt == token_type::logic_action_more   ||
+         tt == token_type::logic_action_not    ||
+         tt == token_type::logic_action_or     ||
+         tt == token_type::bracket_open;
 }
 
 static std::string clear_spaces(std::string str) {
@@ -214,7 +223,7 @@ math_token _execute_expression(std::string input) {
       }
       bracket_depth--;
     } else if (it->type == token_type::action_plus) {
-      if (it == plist->begin() || is_not_number_type((--it)->type)) {
+      if (it == plist->begin() || can_be_unary_neighbor((--it)->type)) {
         // if unary plus
         if (it != plist->begin()) {
           // if prev token exists need to iterate back to plus
@@ -233,7 +242,7 @@ math_token _execute_expression(std::string input) {
         });
       }
     } else if (it->type == token_type::action_minus) {
-      if (it == plist->begin() || is_not_number_type((--it)->type)) {
+      if (it == plist->begin() || can_be_unary_neighbor((--it)->type)) {
         // if unary minus
         if (it != plist->begin()) {
           // if prev token exists need to iterate back to minus
