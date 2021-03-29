@@ -8,7 +8,7 @@ struct test {
 };
 
 constexpr size_t TEST_START_INDEX = 0;
-constexpr size_t TESTS_COUNT = 26;
+constexpr size_t TESTS_COUNT = 29;
 
 int main() {
   const test tests[] = {
@@ -115,6 +115,18 @@ int main() {
     {
       "create_array(1, 2, 3,4)",
       "Unindefined function name - create_array"
+    },
+    {
+      "3 | 5",
+      "Unsupported operator: |"
+    },
+    {
+      "9 === 2",
+      "Incomprehensible sequence: ==="
+    },
+    {
+      "(3 && 0) == !1",
+      "1"
     },
   };
 

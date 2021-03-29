@@ -116,10 +116,15 @@ static std::list<math_token> * split_into_tokens(std::string str) {
     } else if (tt == token_type::none) {
       tt = token_tmp;
     } else {
-      // if (tt == token_type::logic) {
-
-      // }
       if (
+        (tt == token_type::logic_action_or && token_tmp == token_type::logic_action_or) ||
+        (tt == token_type::logic_action_and && token_tmp == token_type::logic_action_and) ||
+        (tt == token_type::logic_action_equals && token_tmp == token_type::logic_action_equals)
+      ) {
+        if (i - bindex + 1 > 2) {
+          throw std::logic_error("Incomprehensible sequence: " + str.substr(bindex, i - bindex + 1));
+        }
+      } else if (
         tt != token_type::number ||
         (tt != token_tmp && tt != token_type::float_number)
       ) {
@@ -268,11 +273,17 @@ math_token _execute_expression(std::string input) {
         it: it
       });
     } else if (it->type == token_type::logic_action_or) {
+      if (it->value.size() != 2) {
+        throw std::logic_error("Unsupported operator: " + it->value);
+      }
       action_stack.push({
         priority: PRIORITY_NOTATION * bracket_depth,
         it: it
       });
     } else if (it->type == token_type::logic_action_and) {
+      if (it->value.size() != 2) {
+        throw std::logic_error("Unsupported operator: " + it->value);
+      }
       action_stack.push({
         priority: PRIORITY_NOTATION * bracket_depth + 1,
         it: it
@@ -464,6 +475,61 @@ math_token _execute_expression(std::string input) {
       } else {
         throw std::logic_error("Operand of ! must be number");
       }
+
+    // LOGIC ==
+    } else if (action == token_type::logic_action_equals) {
+      surroundings = binary_surroundings_check(it);
+      --it;
+      if (surroundings == 'n') {
+        Number n1 = std::stoll(it->value);
+        it = plist->erase(it);
+        Number n2 = std::stoll(it->value);
+        it->value = std::to_string(n1 == n2);
+      } else if (surroundings == 'f') {
+        Float n1 = std::stold(it->value);
+        it = plist->erase(it);
+        Float n2 = std::stold(it->value);
+        it->value = std::to_string(n1 == n2);
+      } else {
+        throw std::logic_error("Operands of == must be numbers or floats");
+      }
+
+    // LOGIC &&
+    } else if (action == token_type::logic_action_and) {
+      surroundings = binary_surroundings_check(it);
+      --it;
+      if (surroundings == 'n') {
+        Number n1 = std::stoll(it->value);
+        it = plist->erase(it);
+        Number n2 = std::stoll(it->value);
+        it->value = std::to_string(n1 && n2);
+      } else if (surroundings == 'f') {
+        Float n1 = std::stold(it->value);
+        it = plist->erase(it);
+        Float n2 = std::stold(it->value);
+        it->value = std::to_string(n1 && n2);
+      } else {
+        throw std::logic_error("Operands of && must be numbers or floats");
+      }
+
+    // LOGIC ||
+    } else if (action == token_type::logic_action_or) {
+      surroundings = binary_surroundings_check(it);
+      --it;
+      if (surroundings == 'n') {
+        Number n1 = std::stoll(it->value);
+        it = plist->erase(it);
+        Number n2 = std::stoll(it->value);
+        it->value = std::to_string(n1 || n2);
+      } else if (surroundings == 'f') {
+        Float n1 = std::stold(it->value);
+        it = plist->erase(it);
+        Float n2 = std::stold(it->value);
+        it->value = std::to_string(n1 || n2);
+      } else {
+        throw std::logic_error("Operands of || must be numbers or floats");
+      }
+
     }
   }
 

@@ -21,10 +21,10 @@ enum token_type {
   comma,
   logic_action_less,
   logic_action_more,
-  logic_action_and, // not supported
-  logic_action_or, // not supported
+  logic_action_and,
+  logic_action_or,
   logic_action_not,
-  logic_action_equals, // not supported
+  logic_action_equals,
   figured_bracket_open,
   figured_bracket_close
 };
