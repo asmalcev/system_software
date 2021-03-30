@@ -6,6 +6,9 @@
 #include <fstream>
 
 #include "../../../math_interpreter/src/MathInterpreter/MathInterpreter.hpp"
+
+#include "../LoopInterpreter/LoopInterpreter.hpp"
+#include "../VariableController/VariableController.hpp"
 #include "../ConditionInterpreter/ConditionInterpreter.hpp"
 
 std::string clear_input(std::ifstream& input);

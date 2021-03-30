@@ -5,6 +5,7 @@
 #include <list>
 
 #include "../MathInterpreter/MathInterpreter.hpp"
+#include "../../../pseudo-interpreter/src/VariableController/VariableController.hpp"
 
 enum supported_functions {
   f_sin,

@@ -34,11 +34,11 @@ int main() {
     },
     {
       "if (52) {} else",
-      "Operator-if else-statement must be into figured brackets and follow behind condition"
+      "Operator-else statement must be into figured brackets and follow behind condition"
     },
     {
       "if (!52) {} else {",
-      "Operator-if else-statement must be into figured brackets and follow behind condition"
+      "Operator-else statement must be into figured brackets and follow behind condition"
     },
   };
 

@@ -35,13 +35,25 @@ void interpreter_code(std::string input) {
 
       if (buffer == "if") {
         i += buffer.size() + if_proccessing(input.substr(i + 2));
-      } else {
-        _execute_function(input.substr(i), length_buffer);
-        i += length_buffer;
-        length_buffer = 0;
+      } else if (buffer == "while") {
+        i += buffer.size() + while_proccessing(input.substr(i + 5));
+        
+      } else if (buffer == "for") {
 
-        if (input[i] != ';') {
-          throw std::logic_error("Missed ; symbol");
+      } else {
+
+        if (input[i + buffer.size()] == '=') {
+          // variable assigning
+          i += variable_controller::instance().read_variable_assigning(input.substr(i));
+
+        } else {
+          _execute_function(input.substr(i), length_buffer);
+          i += length_buffer;
+          length_buffer = 0;
+
+          if (input[i] != ';') {
+            throw std::logic_error("Missed ; symbol");
+          }
         }
       }
     }

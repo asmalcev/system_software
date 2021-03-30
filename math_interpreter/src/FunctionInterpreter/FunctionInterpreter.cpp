@@ -64,6 +64,7 @@ struct math_token _execute_function(std::string str, size_t & p_length) {
   }
 
   bindex = p_length;
+  size_t tmp = bindex;
   do {
     c  = str[p_length++];
     tt = char_type_func(c);
@@ -74,7 +75,9 @@ struct math_token _execute_function(std::string str, size_t & p_length) {
       if (bracket_depth == 1) {
         args.push_back(
           _execute_expression(
-            str.substr(bindex, p_length - bindex - 1)
+            variable_controller::instance().fill_string_with_variables(
+              str.substr(bindex, p_length - bindex - 1)
+            )
           )
         );
       }
@@ -84,10 +87,12 @@ struct math_token _execute_function(std::string str, size_t & p_length) {
     if (tt == token_type::comma && bracket_depth == 1) {
       args.push_back(
         _execute_expression(
-          str.substr(bindex, p_length - bindex - 1)
+          variable_controller::instance().fill_string_with_variables(
+            str.substr(bindex, p_length - bindex - 1)
+          )
         )
       );
-      bindex = p_length + 1;
+      bindex = p_length;
     }
 
   } while(bracket_depth);
@@ -155,10 +160,13 @@ struct math_token _execute_function(std::string str, size_t & p_length) {
     }
     tt = token_type::float_number;
   } else if (sf == supported_functions::f_println) {
-    if (args.size() != 1) {
+    if (args.size() == 0) {
       throw std::invalid_argument("Invalid number of arguments for println function");
     }
-    std::cout << it->value << std::endl;
+    for (; it != args.end(); ++it) {
+      std::cout << it->value << " ";
+    }
+    std::cout << std::endl;
     result = "";
     tt     = token_type::none;
   }

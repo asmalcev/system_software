@@ -1,0 +1,7 @@
+variable = 9 + 8;
+
+if (variable > 100) {
+  println(variable);
+} else {
+  println(-variable);
+}
