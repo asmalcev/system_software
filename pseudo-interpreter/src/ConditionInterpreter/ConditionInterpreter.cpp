@@ -75,7 +75,6 @@ size_t get_bindex_of_statement(
 
 size_t if_proccessing(std::string input) {
   size_t condition_block_length = 0;
-  token_type tt;
 
   bool condition_state = execute_logic_expression(
     find_logic_expression(input, "Operator-if", condition_block_length)

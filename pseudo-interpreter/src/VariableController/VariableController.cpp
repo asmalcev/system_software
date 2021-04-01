@@ -23,7 +23,7 @@ math_token& variable_controller::operator[] (std::string variable_name) {
     if (std::regex_search(variable_name, re)) {
       throw std::logic_error("A variable name can only contain letters and numbers");
     }
-    return variables.insert({ variable_name, {} }).first->second;
+    return variables.insert({ variable_name, { "0", token_type::number } }).first->second;
   }
 }
 

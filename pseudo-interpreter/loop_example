@@ -1,8 +1,8 @@
-x = 2;
-
-while (x < 50) {
-  println(x);
-  x = x * 2;
+for (i = 0; i < 10; i = i + 1) {
+  println(i);
 }
 
-println(x);
+while (i < 100) {
+  println(i);
+  i = i * 2;
+}

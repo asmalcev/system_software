@@ -39,6 +39,7 @@ void interpreter_code(std::string input) {
         i += buffer.size() + while_proccessing(input.substr(i + 5));
         
       } else if (buffer == "for") {
+        i += buffer.size() + for_proccessing(input.substr(i + 3));
 
       } else {
 
